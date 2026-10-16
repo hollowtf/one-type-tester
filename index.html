@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>One — Type Tester</title>
+  <meta name="description" content="Type tester for One Regular.">
+  <link rel="preload" href="assets/fonts/One-Regular.otf" as="font" type="font/otf" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Apply the saved theme (dark by default) before first paint to avoid a flash.
+    (function () {
+      var t;
+      try { t = localStorage.getItem('one-theme'); } catch (e) {}
+      document.documentElement.dataset.theme = t || 'dark';
+    })();
+  </script>
+</head>
+<body>
+  <header class="top">
+    <img class="logo" src="assets/icons/Studio-one-logo.svg" width="44" height="40" alt="Studio One">
+    <span class="chip">One.otf</span>
+  </header>
+
+  <main class="stage">
+    <div
+      id="sample"
+      class="sample"
+      contenteditable="true"
+      spellcheck="false"
+      role="textbox"
+      aria-multiline="true"
+      aria-label="Editable sample text"
+      aria-describedby="hint"
+    ></div>
+    <p class="hint" id="hint">Click to edit</p>
+  </main>
+
+  <nav class="bar" aria-label="Type tester controls">
+    <button class="btn info-btn" id="info-btn" type="button" aria-haspopup="dialog" aria-label="Information">
+      <span class="icon" style="--src: url(assets/icons/Information.svg)" aria-hidden="true"></span>
+      <span class="info-label">Information</span>
+    </button>
+
+    <div class="controls" id="controls">
+      <button class="btn square" id="theme-btn" type="button" aria-label="Toggle dark mode">
+        <img class="icon-img" src="assets/icons/Dark-mode-toggle.svg" width="24" height="24" alt="">
+      </button>
+
+      <label class="btn slider size-ctl" title="Font size">
+        <span class="icon" style="--src: url(assets/icons/Type-size.svg)" aria-hidden="true"></span>
+        <input id="size" type="range" min="12" max="320" step="1" aria-label="Font size">
+        <output id="size-out" for="size"></output>
+      </label>
+
+      <label class="btn slider leading-ctl" title="Line height">
+        <span class="icon" style="--src: url(assets/icons/Line-height.svg)" aria-hidden="true"></span>
+        <input id="leading" type="range" min="0.7" max="2.2" step="0.05" aria-label="Line height">
+        <output id="leading-out" for="leading"></output>
+      </label>
+
+      <div class="btn align" role="radiogroup" aria-label="Text alignment">
+        <button type="button" role="radio" data-align="left" aria-label="Align left">
+          <span class="icon" style="--src: url(assets/icons/Left-align.svg)" aria-hidden="true"></span>
+        </button>
+        <button type="button" role="radio" data-align="center" aria-label="Align centre">
+          <span class="icon" style="--src: url(assets/icons/Right-align.svg)" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="picker">
+        <button class="btn picker-btn" id="picker-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="picker-menu">
+          <span id="picker-label"></span>
+          <span class="icon" style="--src: url(assets/icons/Down-arrow.svg)" aria-hidden="true"></span>
+        </button>
+        <ul class="picker-menu" id="picker-menu" role="listbox" aria-label="Sample text style" hidden></ul>
+      </div>
+
+      <!-- Mobile replaces the dropdown with a three-way toggle. -->
+      <div class="toggle style-toggle" id="style-toggle" role="radiogroup" aria-label="Sample text style"></div>
+
+      <button class="btn square" id="next-btn" type="button" aria-label="Next sample text" title="Next sample (→)">
+        <span class="icon" style="--src: url(assets/icons/Generate-new.svg)" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <button class="btn sheet-btn" id="sheet-btn" type="button" aria-expanded="false" aria-controls="controls">
+      Tester controls
+    </button>
+
+    <a class="btn square download" id="download-btn" href="assets/fonts/One-Regular.otf" download="One-Regular.otf" aria-label="Download One Regular (OTF)" title="Download One-Regular.otf">
+      <span class="icon" style="--src: url(assets/icons/Download.svg)" aria-hidden="true"></span>
+    </a>
+  </nav>
+
+  <dialog id="info" class="modal" aria-label="About One">
+    <div class="set-toggle" id="set-toggle" role="radiogroup" aria-label="Carousel"></div>
+
+    <div class="modal-card">
+      <div class="carousel" aria-roledescription="carousel">
+        <!-- Slides are filled in by app.js from CAROUSELS. -->
+        <ul class="slides" id="slides"></ul>
+        <!-- Desktop only; touch screens swipe. -->
+        <button class="slide-arrow prev" id="slide-prev" type="button" aria-label="Previous slide">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg>
+        </button>
+        <button class="slide-arrow next" id="slide-next" type="button" aria-label="Next slide">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg>
+        </button>
+
+        <div class="carousel-foot">
+          <div class="dots" id="dots" role="tablist" aria-label="Choose slide"></div>
+          <p class="caption" id="caption" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <button class="modal-close" id="info-close" type="button" aria-label="Close">
+        <span class="icon" style="--src: url(assets/icons/close.svg)" aria-hidden="true"></span>
+      </button>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
