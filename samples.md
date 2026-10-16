@@ -12,7 +12,7 @@ accented letters, and no `%`, `^`, `~`, `{ }` or `< >`.
 
 ## Headlines
 
-*2–3 words · default 120px desktop / 64px mobile · line height 1.0*
+*2–3 words · default 120px desktop / 48px mobile · line height 1.0*
 
 1. Spirit Untamed.
 2. Invent Tomorrow
@@ -27,7 +27,7 @@ accented letters, and no `%`, `^`, `~`, `{ }` or `< >`.
 
 ## Subheaders
 
-*Full sentences · default 52px desktop / 40px mobile · line height 1.15*
+*Full sentences · default 52px desktop / 32px mobile · line height 1.15*
 
 1. The best work comes from people who care more than they need to.
 2. An idea is only ever as good as the craft that brings it to life.

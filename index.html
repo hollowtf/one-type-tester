@@ -8,18 +8,39 @@
   <link rel="preload" href="assets/fonts/One-Regular.otf" as="font" type="font/otf" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script>
-    // Apply the saved theme (dark by default) before first paint to avoid a flash.
+    // Apply the saved theme (light by default) before first paint to avoid a flash.
     (function () {
       var t;
       try { t = localStorage.getItem('one-theme'); } catch (e) {}
-      document.documentElement.dataset.theme = t || 'dark';
+      document.documentElement.dataset.theme = t || 'light';
+      // Hide the page until the intro has played. It plays once per browser
+      // session, and never for reduced motion.
+      var seen;
+      try { seen = sessionStorage.getItem('one-intro-seen'); } catch (e) {}
+      if (!seen && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('intro-on');
+      }
     })();
   </script>
 </head>
 <body>
+  <!-- Load-in: the Studio One mark, then "One.otf" wipes in beside it. -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="intro-mark">
+      <span class="intro-logo" style="--src: url(assets/icons/Studio-one-mark.svg)"></span>
+      <span class="intro-name">One.otf</span>
+    </div>
+  </div>
+
   <header class="top">
-    <img class="logo" src="assets/icons/Studio-one-logo.svg" width="44" height="40" alt="Studio One">
-    <span class="chip">One.otf</span>
+    <button class="btn info-btn" id="info-btn" type="button" aria-haspopup="dialog" aria-label="Information">
+      <span class="icon" style="--src: url(assets/icons/Information.svg)" aria-hidden="true"></span>
+      <span class="info-label">Information</span>
+    </button>
+    <a class="btn download" id="download-btn" href="assets/fonts/One-Regular.otf" download="One-Regular.otf" aria-label="Download One Regular (OTF)" title="Download One-Regular.otf">
+      <span class="download-label">Download</span>
+      <span class="icon" style="--src: url(assets/icons/Download.svg)" aria-hidden="true"></span>
+    </a>
   </header>
 
   <main class="stage">
@@ -33,15 +54,10 @@
       aria-label="Editable sample text"
       aria-describedby="hint"
     ></div>
-    <p class="hint" id="hint">Click to edit</p>
+    <p class="hint" id="hint">Write…</p>
   </main>
 
   <nav class="bar" aria-label="Type tester controls">
-    <button class="btn info-btn" id="info-btn" type="button" aria-haspopup="dialog" aria-label="Information">
-      <span class="icon" style="--src: url(assets/icons/Information.svg)" aria-hidden="true"></span>
-      <span class="info-label">Information</span>
-    </button>
-
     <div class="controls" id="controls">
       <button class="btn square" id="theme-btn" type="button" aria-label="Toggle dark mode">
         <img class="icon-img" src="assets/icons/Dark-mode-toggle.svg" width="24" height="24" alt="">
@@ -84,20 +100,24 @@
       </button>
     </div>
 
+    <!-- Shows the current size and line height, each with its icon; opens the controls. -->
     <button class="btn sheet-btn" id="sheet-btn" type="button" aria-expanded="false" aria-controls="controls">
-      Tester controls
+      <span class="sheet-val">
+        <span class="icon" style="--src: url(assets/icons/Type-size.svg)" aria-hidden="true"></span>
+        <span id="sheet-size"></span>
+      </span>
+      <span class="sheet-val">
+        <span class="icon" style="--src: url(assets/icons/Line-height.svg)" aria-hidden="true"></span>
+        <span id="sheet-leading"></span>
+      </span>
     </button>
-
-    <a class="btn square download" id="download-btn" href="assets/fonts/One-Regular.otf" download="One-Regular.otf" aria-label="Download One Regular (OTF)" title="Download One-Regular.otf">
-      <span class="icon" style="--src: url(assets/icons/Download.svg)" aria-hidden="true"></span>
-    </a>
   </nav>
 
   <dialog id="info" class="modal" aria-label="About One">
     <div class="set-toggle" id="set-toggle" role="radiogroup" aria-label="Carousel"></div>
 
     <div class="modal-card">
-      <div class="carousel" aria-roledescription="carousel">
+      <div class="carousel" id="carousel" aria-roledescription="carousel">
         <!-- Slides are filled in by app.js from CAROUSELS. -->
         <ul class="slides" id="slides"></ul>
         <!-- Desktop only; touch screens swipe. -->
@@ -112,6 +132,61 @@
           <div class="dots" id="dots" role="tablist" aria-label="Choose slide"></div>
           <p class="caption" id="caption" aria-live="polite"></p>
         </div>
+      </div>
+
+      <!-- Characters tab only: every glyph in the font, filled in by app.js. -->
+      <section class="glyphs" id="glyphs" hidden>
+        <h3>All characters</h3>
+        <ul class="glyph-grid" id="glyph-grid" aria-label="All characters"></ul>
+      </section>
+
+      <!-- Ambition: three stacked panels, each a small macOS-style UI mock-up
+           (drawn in HTML/CSS) with a two-line caption. -->
+      <div class="ambition" id="ambition" hidden>
+        <section class="amb-block">
+          <div class="amb-panel" aria-hidden="true">
+            <div class="mac popup">
+              <span>One</span>
+              <svg viewBox="0 0 12 16" width="12" height="16"><path d="M3 6.5 6 3.5l3 3M3 9.5l3 3 3-3"/></svg>
+            </div>
+          </div>
+          <div class="amb-text">
+            <h3>One family.</h3>
+            <p>Eight, style and case in a single file.</p>
+          </div>
+        </section>
+
+        <section class="amb-block">
+          <div class="amb-panel" aria-hidden="true">
+            <ul class="mac menu">
+              <li><span>Description</span><span>8 pt</span></li>
+              <li><span>Body</span><span>13 pt</span></li>
+              <li><span>Paragraphs</span><span>21 pt</span></li>
+              <li class="on"><span>Subtitle</span><span>34 pt</span></li>
+              <li><span>Title</span><span>55 pt</span></li>
+              <li><span>Headline</span><span>89 pt</span></li>
+            </ul>
+          </div>
+          <div class="amb-text">
+            <h3>One scale.</h3>
+            <p>Variable steps, from text to headline.</p>
+          </div>
+        </section>
+
+        <section class="amb-block">
+          <div class="amb-panel" aria-hidden="true">
+            <div class="mac toolbar">
+              <span class="tool abc">Abc</span>
+              <svg class="tool" viewBox="0 0 16 16" width="16" height="16"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M5 7v3M7.2 7.2c.4-.4 1.6-.4 1.6.5 0 .8-1.7 1.5-1.7 2.3h1.8M10.6 7h1.5l-.8 1.2c.9 0 1.1 1.8-.1 1.8-.4 0-.7-.1-.8-.3"/></svg>
+              <span class="tool at">@</span>
+              <svg class="tool" viewBox="0 0 16 16" width="16" height="16"><path d="M3 6V4.2C3 3.5 3.5 3 4.2 3H6M10 3h1.8c.7 0 1.2.5 1.2 1.2V6M13 10v1.8c0 .7-.5 1.2-1.2 1.2H10M6 13H4.2C3.5 13 3 12.5 3 11.8V10"/></svg>
+            </div>
+          </div>
+          <div class="amb-text">
+            <h3>One system.</h3>
+            <p>Letters, glyphs and icons, in one file.</p>
+          </div>
+        </section>
       </div>
 
       <button class="modal-close" id="info-close" type="button" aria-label="Close">

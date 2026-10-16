@@ -7,7 +7,7 @@
       label: 'Sample headline',
       short: 'Headline',
       size: 120,
-      mobileSize: 64,
+      mobileSize: 48,
       leading: 1,
       texts: [
         'Spirit Untamed.',
@@ -26,7 +26,7 @@
       label: 'Sample subheader',
       short: 'Subheader',
       size: 52,
-      mobileSize: 40,
+      mobileSize: 32,
       leading: 1.15,
       texts: [
         'The best work comes from people who care more than they need to.',
@@ -139,6 +139,11 @@
     sizeOut.textContent = state.size + 'px';
     leadingInput.value = state.leading;
     leadingOut.textContent = formatLeading(state.leading);
+    // Mobile bar button: [size icon] 48px   [line-height icon] 1.0
+    $('sheet-size').textContent = state.size + 'px';
+    $('sheet-leading').textContent = formatLeading(state.leading);
+    sheetBtn.setAttribute('aria-label', 'Tester controls, size ' + state.size +
+      'px, line height ' + formatLeading(state.leading));
     alignButtons.forEach(function (b) {
       b.setAttribute('aria-checked', String(b.dataset.align === state.align));
     });
@@ -333,7 +338,7 @@
 
   var CAROUSELS = {
     narrative: {
-      label: 'Narrative',
+      label: 'About',
       slides: [
         { src: 'Image-1.png', alt: 'A metal sort of a lowercase e',
           caption: 'For hundreds of years, type was ink pressed onto paper.' },
@@ -348,7 +353,7 @@
       ],
     },
     details: {
-      label: 'Details',
+      label: 'Characters',
       slides: [
         { src: 'Letter-1.png', alt: 'Capital E with the curve where its lower arm meets the serif highlighted',
           caption: 'Internal bracketed serifs soften the counterforms' },
@@ -369,13 +374,16 @@
       ],
     },
   };
-  var SET_ORDER = ['narrative', 'details'];
+  // Not a carousel: a scrolling column of panels written in index.html.
+  CAROUSELS.ambition = { label: 'Ambition', stack: true };
+  var SET_ORDER = ['narrative', 'details', 'ambition'];
 
   var modal = $('info');
   var track = $('slides');
   var dotsEl = $('dots');
   var caption = $('caption');
   var setToggle = $('set-toggle');
+  var modalCard = modal.querySelector('.modal-card');
   var prevArrow = $('slide-prev');
   var nextArrow = $('slide-next');
   var currentSet = 'narrative';
@@ -412,11 +420,16 @@
       d.addEventListener('click', function () { goTo(i); });
       dotsEl.appendChild(d);
     });
+    track.scrollLeft = 0;
+  }
+
+  function updateTabs() {
     setToggle.querySelectorAll('button').forEach(function (b) {
       b.setAttribute('aria-checked', String(b.dataset.set === currentSet));
     });
-    track.scrollLeft = 0;
   }
+
+  function isStack() { return !!CAROUSELS[currentSet].stack; }
 
   function showSlide(i) {
     slideIndex = i;
@@ -450,9 +463,17 @@
   function setCarousel(key) {
     if (key === currentSet) return;
     currentSet = key;
-    renderSet();
-    showSlide(0);
+    updateTabs();
+    $('carousel').hidden = isStack();
+    $('ambition').hidden = !isStack();
+    $('glyphs').hidden = currentSet !== 'details';
+    modalCard.scrollTop = 0;
+    if (!isStack()) {
+      renderSet();
+      showSlide(0);
+    }
   }
+
 
   prevArrow.addEventListener('click', function () { goTo(slideIndex - 1); });
   nextArrow.addEventListener('click', function () { goTo(slideIndex + 1); });
@@ -474,19 +495,53 @@
   }, { passive: true });
 
   modal.addEventListener('keydown', function (e) {
-    if (e.target.closest && e.target.closest('.set-toggle')) return;
+    if (isStack() || (e.target.closest && e.target.closest('.set-toggle'))) return;
     if (e.key === 'ArrowRight') { e.preventDefault(); goTo(slideIndex + 1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(slideIndex - 1); }
   });
 
+  // ---- All characters grid (Characters tab) ----
+  // Every glyph in One-Regular.otf, in font order. Each group starts a new row
+  // of the 5-wide grid. Ligatures are typed as their two letters; liga and dlig are on.
+  var GLYPH_GROUPS = [
+    ['Uppercase', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')],
+    ['Lowercase', 'abcdefghijklmnopqrstuvwxyz'.split('')],
+    ['Ligatures', ['fb', 'fi', 'fj', 'fk', 'fl']],
+    ['Figures', '0123456789'.split('')],
+    ['Punctuation', '.,:;…!¡?¿·•*#/\\-–—_()[]‚„“”‘’«»‹›"\''.split('')],
+    ['Symbols', '@&|'.split('')],
+    ['Currency', '$€£'.split('')],
+    ['Maths', '+−×÷='.split('')],
+  ];
+  var COLS = 5;
+  var grid = $('glyph-grid');
+  GLYPH_GROUPS.forEach(function (group) {
+    var chars = group[1];
+    chars.forEach(function (ch) {
+      var cell = document.createElement('li');
+      cell.textContent = ch;
+      cell.setAttribute('aria-label', group[0] + ': ' + ch);
+      grid.appendChild(cell);
+    });
+    // Pad the row out with empty cells so the next group starts on a new row.
+    for (var n = chars.length % COLS; n && n < COLS; n++) {
+      var gap = document.createElement('li');
+      gap.className = 'empty';
+      gap.setAttribute('aria-hidden', 'true');
+      grid.appendChild(gap);
+    }
+  });
+
   renderSet();
+  updateTabs();
   caption.innerHTML = slidesOf()[0].caption;
   shownCaption = currentSet + 0;
   showSlide(0);
 
   $('info-btn').addEventListener('click', function () {
     modal.showModal();
-    goTo(0, true);
+    modalCard.scrollTop = 0;
+    if (!isStack()) goTo(0, true);
   });
   $('info-close').addEventListener('click', function () { modal.close(); });
   // Close when clicking the backdrop.
@@ -514,4 +569,32 @@
   }
   document.fonts.ready.then(refit);
   addEventListener('resize', refit);
+
+  // ---- Load-in ----
+  // Wait for One to load (at most 1.5s) so the name is set in it, play the
+  // mark (~1.4s), hold for ~1.6s, then lift the cover. Click or any key skips.
+  // Once per browser session (see the inline script in index.html).
+  var intro = $('intro');
+  if (intro) {
+    if (!root.classList.contains('intro-on')) {
+      intro.remove(); // already seen this session, or reduced motion
+    } else {
+      try { sessionStorage.setItem('one-intro-seen', '1'); } catch (e) {}
+      var finished = false;
+      var finish = function () {
+        if (finished) return;
+        finished = true;
+        intro.classList.add('done');
+        root.classList.remove('intro-on');
+        setTimeout(function () { intro.remove(); }, 800);
+      };
+      var timeout = new Promise(function (r) { setTimeout(r, 1500); });
+      Promise.race([document.fonts.load('28px One'), timeout]).then(function () {
+        intro.classList.add('play');
+        setTimeout(finish, 3000);
+      });
+      intro.addEventListener('click', finish);
+      addEventListener('keydown', finish, { once: true });
+    }
+  }
 })();

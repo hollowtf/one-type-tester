@@ -50,6 +50,8 @@ body {
   font-family: var(--font);
   font-size: 16px;
   line-height: 32px;
+  /* Standard (fi fl) and discretionary (fb fj fk) ligatures, everywhere. */
+  font-feature-settings: "liga" 1, "dlig" 1, "kern" 1;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -57,6 +59,8 @@ body {
 ::selection { background: var(--selection); }
 
 button, input, output { font: inherit; color: inherit; }
+
+[hidden] { display: none !important; }
 
 :focus-visible {
   outline: 1px solid var(--fg);
@@ -77,35 +81,22 @@ button, input, output { font: inherit; color: inherit; }
 }
 
 .icon-img { display: block; }
-:root[data-theme="dark"] .icon-img,
-:root[data-theme="dark"] .logo { filter: invert(1); }
+:root[data-theme="dark"] .icon-img { filter: invert(1); }
 
-/* ---------- Header ---------- */
+/* ---------- Header: Information (left) and Download (right) ---------- */
 
 .top {
   position: fixed;
   top: var(--pad);
-  left: 50%;
-  transform: translateX(-50%);
+  left: var(--pad);
+  right: var(--pad);
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  pointer-events: none; /* let clicks through the gap to the sample */
 }
-
-.logo { display: block; border-radius: var(--btn-radius); }
-
-.chip {
-  display: flex;
-  align-items: center;
-  height: 40px;
-  padding: 4px 16px;
-  border-radius: var(--btn-radius);
-  background: var(--chip);
-  font-size: 21px;
-  white-space: nowrap;
-  transition: background-color 0.3s ease;
-}
+.top > * { pointer-events: auto; }
 
 /* ---------- Stage ---------- */
 
@@ -126,7 +117,6 @@ button, input, output { font: inherit; color: inherit; }
   font-family: var(--font);
   font-size: 120px;
   line-height: 1;
-  font-feature-settings: "liga" 1, "kern" 1;
   overflow-wrap: break-word;
   white-space: pre-wrap;
   outline: none;
@@ -155,15 +145,14 @@ button, input, output { font: inherit; color: inherit; }
   right: var(--pad);
   bottom: 0;
   z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   padding: var(--pad) 0;
   padding-bottom: max(var(--pad), env(safe-area-inset-bottom));
   background: var(--bg);
   border-top: 1px solid var(--chip);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .controls {
@@ -202,14 +191,12 @@ a.btn:hover,
 
 .btn.square { padding: 8px; }
 
-.info-btn { justify-self: start; gap: 4px; }
+.info-btn { gap: 4px; }
 
 .download {
-  justify-self: end;
-  background: var(--fg);
-  color: var(--bg);
+  gap: 4px;
+  padding: 4px 8px 4px 12px;
 }
-a.download:hover { color: var(--fg); }
 
 /* Sliders */
 
@@ -305,7 +292,10 @@ input[type="range"]:focus-visible::-moz-range-thumb {
 
 /* "Tester controls" toggle — mobile only */
 
-.sheet-btn { display: none; padding: 4px 16px; }
+.sheet-btn { display: none; gap: 24px; padding: 4px 16px 4px 12px; }
+.sheet-val { display: inline-flex; align-items: center; gap: 4px; }
+.sheet-val .icon { color: #c3b4a5; }
+:root[data-theme="dark"] .sheet-val .icon { color: #8392a8; }
 .sheet-btn[aria-expanded="true"] { background: var(--chip); }
 
 /* Segmented toggle: the mobile style switch and the modal's carousel switch */
@@ -399,7 +389,12 @@ input[type="range"]:focus-visible::-moz-range-thumb {
   align-items: center;
   gap: 64px;
   width: 100%;
-  /* Leave room for the toggle (34px + 16px gap) and a 16px margin top and bottom. */
+  /* Always the height the card has with a carousel (image + 264px of caption,
+     dots and close), so switching tabs never resizes or moves it; taller tabs
+     scroll inside. Capped to leave room for the tabs (34px + 16px gap) and a
+     16px margin top and bottom. */
+  --card-w: 375px;
+  height: calc((var(--card-w) - 2px) * 469 / 375 + 264px);
   max-height: calc(100dvh - 32px - 50px);
   padding: 0 0 32px;
   border-radius: 34px;
@@ -409,6 +404,9 @@ input[type="range"]:focus-visible::-moz-range-thumb {
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
   scrollbar-width: none;
 }
+/* With a fixed card height, nothing inside may be squashed; it scrolls instead. */
+.modal-card > *,
+.carousel > * { flex-shrink: 0; }
 /* Set per theme here rather than via a variable: older Safari doesn't let
    ::backdrop inherit custom properties. */
 .modal::backdrop {
@@ -506,44 +504,197 @@ input[type="range"]:focus-visible::-moz-range-thumb {
 .caption.swap { opacity: 0; }
 .caption .dim { opacity: 0.5; }
 
-/* Narrative / Details switch, sitting 16px above the card: one shared track
-   (10%, 25% on hover) with a 75% thumb that contrasts with the theme. */
+/* About / Characters tabs, 16px above the card: plain text with an underline
+   under the selected one, in the page's theme colours. */
 .carousel { position: relative; }
 .set-toggle {
   flex: none;
   display: flex;
-  padding: 2px;
-  border-radius: var(--btn-radius);
-  background: rgba(1, 11, 26, 0.1);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  transition: background-color 0.15s ease;
+  gap: 16px;
 }
-.set-toggle:hover { background: rgba(1, 11, 26, 0.25); }
-/* Over the dark page the track uses a light tint. */
-:root[data-theme="dark"] .set-toggle { background: rgba(253, 245, 237, 0.1); }
-:root[data-theme="dark"] .set-toggle:hover { background: rgba(253, 245, 237, 0.25); }
 .set-toggle button {
-  height: 30px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 2px;
   border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #fff;
+  background: none;
+  color: var(--fg);
+  opacity: 0.5;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+  transition: opacity 0.15s ease, text-decoration-color 0.15s ease;
 }
+.set-toggle button:hover { opacity: 1; }
 .set-toggle button[aria-checked="true"] {
-  background: rgba(1, 11, 26, 0.75);
-  color: #fdf5ed;
-  box-shadow: 0 1px 2px rgba(1, 11, 26, 0.06);
+  opacity: 1;
+  text-decoration-color: currentColor;
 }
-/* The thumb contrasts with the page theme: navy on light, cream on dark. */
-:root[data-theme="dark"] .set-toggle button[aria-checked="true"] {
-  background: rgba(253, 245, 237, 0.75);
-  color: #010b1a;
+
+/* ---------- All characters grid (Characters tab) ----------
+   5 columns of square cells, hairline rules between them. Each group (caps,
+   lowercase, figures…) starts a new row; its leftover cells are left empty. */
+
+.glyphs {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  padding: 0 24px;
 }
+.glyphs h3 {
+  margin: 0;
+  opacity: 0.4;
+  font-size: 21px;
+  font-weight: 400;
+  line-height: normal;
+  text-align: center;
+}
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--chip);
+  border-left: 1px solid var(--chip);
+}
+.glyph-grid li {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-right: 1px solid var(--chip);
+  border-bottom: 1px solid var(--chip);
+  font-size: 32px;
+  line-height: 1;
+}
+.glyph-grid li.empty { background: none; }
+
+/* ---------- Ambition tab ----------
+   Three square panels, each with a macOS-style mock-up in the system UI font,
+   over a two-line caption set in One. */
+
+.ambition {
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+  width: 100%;
+}
+.amb-block {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.amb-panel {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--chip);
+}
+.amb-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 24px;
+  text-align: center;
+  line-height: normal;
+}
+.amb-text h3 { margin: 0; font-size: 21px; font-weight: 400; }
+.amb-text p { margin: 0; font-size: 13px; }
+
+/* Shared "glass" surface for the three mock-ups. */
+.mac {
+  --mac-bg: rgba(236, 236, 236, 0.92);
+  --mac-fg: #1a1a1a;
+  --mac-dim: #a6a6a6;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-weight: 500;
+  color: var(--mac-fg);
+  background: var(--mac-bg);
+  box-shadow:
+    0 0 0 0.5px #dbdbdb,
+    inset 0 0 0 0.5px rgba(38, 38, 38, 0.12),
+    0 8px 48px rgba(0, 0, 0, 0.25);
+  -webkit-font-smoothing: antialiased;
+}
+:root[data-theme="dark"] .mac {
+  --mac-bg: rgba(44, 46, 52, 0.92);
+  --mac-fg: #ececec;
+  --mac-dim: #7d808a;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+    0 8px 48px rgba(0, 0, 0, 0.5);
+}
+.mac svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.popup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 128px;
+  height: 24px;
+  padding: 0 6px 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.popup svg { stroke-width: 1.6; }
+
+.menu {
+  isolation: isolate; /* keeps the blue highlight above the menu's own fill */
+  width: 160px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 12px;
+  list-style: none;
+  font-size: 10px;
+}
+.menu li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 19px;
+}
+.menu li span:last-child { color: var(--mac-dim); font-variant-numeric: tabular-nums; }
+.menu li.on { color: #fff; }
+.menu li.on span:last-child { color: #fff; }
+.menu li.on::before {
+  content: "";
+  position: absolute;
+  inset: 0 -7px;
+  z-index: -1;
+  border-radius: 8px;
+  background: #0069f9;
+}
+.menu li span { position: relative; }
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 5px 12px;
+  border-radius: 12px;
+}
+.toolbar .tool {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.toolbar svg.tool { padding: 4px; }
+.toolbar .at { font-size: 13px; }
 
 /* Prev / next arrows over the image (desktop only), styled like the toggle
    track. Centred on the 375 × 469 image. */
@@ -605,44 +756,25 @@ input[type="range"]:focus-visible::-moz-range-thumb {
 
 /* ---------- Responsive ---------- */
 
-/* Below this the three groups no longer fit with the controls exactly centred,
-   so they share the space evenly instead. */
-@media (max-width: 1180px) {
-  .bar { display: flex; justify-content: space-between; }
+/* Narrower desktops: shorter sliders, then let the controls scroll sideways. */
+@media (max-width: 1000px) {
   input[type="range"] { width: 120px; }
 }
 
-@media (max-width: 1100px) {
-  .info-label { display: none; }
-  .info-btn { padding: 8px; }
-}
-
-/* Narrow screens: info + download on the top row, controls scroll on their own row. */
 @media (max-width: 880px) {
-  :root { --bar-h: 120px; }
-  .bar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas: "info . download" "controls controls controls";
-  }
-  .info-btn { grid-area: info; }
-  .download { grid-area: download; }
-  .controls { grid-area: controls; justify-content: safe center; }
+  .controls { justify-content: safe center; }
   input[type="range"] { width: 96px; }
 }
 
-/* Mobile: Information icon · Tester controls · Download in one row; the type
-   controls fold into a sheet that pops up above the bar. */
+/* Mobile: Information and Download become icons at the top; the bar holds a
+   single "64px / 1.0" button that opens the controls in a sheet above it. */
 @media (max-width: 640px) {
   :root { --bar-h: 72px; }
-  .bar {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .info-label { display: none; }
-  .info-btn { padding: 8px; }
-  .sheet-btn { display: inline-flex; }
+  .info-label,
+  .download-label { display: none; }
+  .info-btn,
+  .download { padding: 8px; }
+  .sheet-btn { display: inline-flex; font-variant-numeric: tabular-nums; }
 
   .controls {
     position: fixed;
@@ -691,14 +823,16 @@ input[type="range"]:focus-visible::-moz-range-thumb {
   .slider output { text-align: right; }
 }
 
-/* Mobile: the card spans the full width and sits on the bottom edge. */
+/* Mobile: the card runs to the bottom edge, 12px in from each side. */
 @media (max-width: 640px) {
+  /* 12px in from each side, running to the bottom edge of the screen. */
   .modal {
-    width: 100%;
-    max-width: 100%;
-    margin: auto 0 0;
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    margin: auto 12px 0;
   }
   .modal-card {
+    --card-w: calc(100vw - 24px);
     max-height: calc(100dvh - 16px - 50px);
     border-radius: 34px 34px 0 0;
     padding-bottom: max(32px, env(safe-area-inset-bottom));
@@ -711,6 +845,72 @@ input[type="range"]:focus-visible::-moz-range-thumb {
   from { transform: translateY(40px); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
+
+/* ---------- Load-in ----------
+   The mark fades up, "One.otf" wipes in beside it, a short hold, then the
+   cover fades away and the page rises in underneath. JS adds .play once the
+   font is ready (so the name is set in One) and .done to finish. */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+  /* Failsafe: never block the page if the script doesn't run. */
+  animation: intro-failsafe 0s linear 7s forwards;
+}
+.intro-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.intro-logo {
+  /* The Studio One mark on its own, drawn as a mask in the text colour. */
+  display: block;
+  position: relative;
+  top: -2px; /* optical alignment with "One.otf" */
+  width: 28px;
+  height: 24px;
+  background-color: currentColor;
+  -webkit-mask: var(--src) center / contain no-repeat;
+  mask: var(--src) center / contain no-repeat;
+  opacity: 0;
+  transform: translateY(6px);
+}
+.intro-name {
+  font-size: 28px;
+  line-height: 40px;
+  clip-path: inset(0 100% 0 0);
+}
+
+.intro.play .intro-logo { animation: intro-logo 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s forwards; }
+.intro.play .intro-name { animation: intro-name 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.5s forwards; }
+
+.intro.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.intro.done .intro-mark { transform: translateY(-8px); }
+
+@keyframes intro-logo { to { opacity: 1; transform: none; } }
+@keyframes intro-name { to { clip-path: inset(0 0 0 0); } }
+@keyframes intro-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+
+/* The page waits underneath, then rises in as the cover lifts. */
+.top, .stage, .bar {
+  transition-property: opacity, transform, background-color, border-color;
+  transition-duration: 0.8s, 0.8s, 0.3s, 0.3s;
+  transition-timing-function: ease, cubic-bezier(0.2, 0.7, 0.2, 1), ease, ease;
+}
+.intro-on .top,
+.intro-on .stage,
+.intro-on .bar {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: intro-failsafe-page 0s linear 7s forwards;
+}
+@keyframes intro-failsafe-page { to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
